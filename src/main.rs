@@ -15,6 +15,8 @@
 
 use core::panic::PanicInfo;
 
+static GREETING: &[u8] = b"Welcome to Gumbo OS!";
+
 /// Reimplement the panic handler
 ///
 /// Normally the Rust std library defines the panic handler for us.
@@ -32,5 +34,15 @@ fn panic(_info: &PanicInfo) -> ! {
 /// It also shouldn't return, and it will rely on an exit system call the OS will implement
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
+
+    let vga_buf = 0xb8000 as *mut u8;
+
+    for(i, &byte) in GREETING.iter().enumerate() {
+        unsafe {
+            *vga_buf.offset(i as isize * 2) = byte;
+            *vga_buf.offset(i as isize * 2 + 1) = 0xb;
+        } 
+    }
+    
     loop {}
 }
