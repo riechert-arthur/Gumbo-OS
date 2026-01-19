@@ -31,6 +31,7 @@ static GREETING: &str = "Welcome to Gumbo OS!";
 /// we will need to define our own versions of std library features.
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
+    println!("{}", _info); 
     loop {}
 }
 
@@ -41,8 +42,6 @@ fn panic(_info: &PanicInfo) -> ! {
 /// It also shouldn't return, and it will rely on an exit system call the OS will implement
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
-    use core::fmt::Write;
-    let mut writer: SpinLockGuard<Writer> = WRITER.acquire();
-    write!(writer, "{}", GREETING).unwrap();
+    println!("{}", GREETING); 
     loop {}
 }
