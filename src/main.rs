@@ -1,6 +1,4 @@
-#![no_std]
-#![no_main]
-/// no_std: Don't include the standard library
+#![no_std] #![no_main] /// no_std: Don't include the standard library
 ///
 /// The kernel will not have access to the std library binary
 /// because it has operating system constructs for networking,
@@ -12,10 +10,19 @@
 /// The Rust runtime relies on the crt0 library to setup the stack
 /// for a C program. It uses start as the entry point. We will not have
 /// access to this in our kernel.
-
+///
+/// The following site was used as a reference: https://os.phil-opp.com/
 use core::panic::PanicInfo;
 
-static GREETING: &[u8] = b"Welcome to Gumbo OS!";
+use crate::{
+    spinlock::SpinLockGuard,
+    vga_buffer::{WRITER, Writer},
+};
+
+mod vga_buffer;
+mod spinlock;
+
+static GREETING: &str = "Welcome to Gumbo OS!";
 
 /// Reimplement the panic handler
 ///
@@ -28,21 +35,14 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 /// Define a new entrypoint for Gumbo OS
-/// 
+///
 /// no_mangle: Prevents rust from generating a unique id for the function
 /// extern "C": Ensures we use the C calling conventions
 /// It also shouldn't return, and it will rely on an exit system call the OS will implement
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
-
-    let vga_buf = 0xb8000 as *mut u8;
-
-    for(i, &byte) in GREETING.iter().enumerate() {
-        unsafe {
-            *vga_buf.offset(i as isize * 2) = byte;
-            *vga_buf.offset(i as isize * 2 + 1) = 0xb;
-        } 
-    }
-    
+    use core::fmt::Write;
+    let mut writer: SpinLockGuard<Writer> = WRITER.acquire();
+    write!(writer, "{}", GREETING).unwrap();
     loop {}
 }
